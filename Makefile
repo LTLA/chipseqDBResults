@@ -10,10 +10,10 @@ update: src
 	cd src && git pull
 
 # Moving the scripts to avoid directory chaos.
-%.Rmd: src/vignettes/%.Rmd
-	cp $< .
+%.Rmd: src
+	cp src/vignettes/$@ .
 
-ref.bib: src/vignettes/ref.bib
+ref.bib: src
 	cp src/vignettes/ref.bib .
 
 # Defining the HTML outputs.
