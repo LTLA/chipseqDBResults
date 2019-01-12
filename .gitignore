@@ -1,0 +1,13 @@
+*.tsv
+*.Rmd
+*.html
+*_files/
+*_cache/
+*.rds
+raw_data
+*.bib
+*.utf8.md
+*.gz
+*.xls
+.cloned
+src/
