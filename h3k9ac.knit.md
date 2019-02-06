@@ -9,7 +9,7 @@ author:
     affiliation: 
     - *WEHI
     - Department of Mathematics and Statistics, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
-date: "2019-01-12"
+date: "2019-02-06"
 vignette: >
   %\VignetteIndexEntry{2. Differential enrichment of H3K9ac in B cells}
   %\VignetteEngine{knitr::rmarkdown}
@@ -45,12 +45,12 @@ acdata
 ## 2    h3k9ac-proB-8108    pro-B H3K9ac (8108)
 ## 3 h3k9ac-matureB-8059 mature B H3K9ac (8059)
 ## 4 h3k9ac-matureB-8086 mature B H3K9ac (8086)
-##                                                                                                   Path
-##                                                                                            <character>
-## 1    /var/folders/md/mvr0n48x51z1gk2qmthrb76sm8p11p/T//RtmpxdFnzm/file60c5c7e19c6/h3k9ac-proB-8113.bam
-## 2    /var/folders/md/mvr0n48x51z1gk2qmthrb76sm8p11p/T//RtmpxdFnzm/file60c5c7e19c6/h3k9ac-proB-8108.bam
-## 3 /var/folders/md/mvr0n48x51z1gk2qmthrb76sm8p11p/T//RtmpxdFnzm/file60c5c7e19c6/h3k9ac-matureB-8059.bam
-## 4 /var/folders/md/mvr0n48x51z1gk2qmthrb76sm8p11p/T//RtmpxdFnzm/file60c5c7e19c6/h3k9ac-matureB-8086.bam
+##                                                       Path
+##                                                <character>
+## 1    /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-proB-8113.bam
+## 2    /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-proB-8108.bam
+## 3 /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-matureB-8059.bam
+## 4 /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-matureB-8086.bam
 ```
 
 # Pre-processing checks 
@@ -582,12 +582,12 @@ head(tabcom)
 ## DataFrame with 6 rows and 6 columns
 ##    nWindows  logFC.up logFC.down              PValue                FDR
 ##   <integer> <integer>  <integer>           <numeric>          <numeric>
-## 1         3         3          0   0.146852572988778  0.246428091834717
-## 2        24         9          0  0.0882966655233832  0.168735548166465
-## 3         8         1          3   0.526424531180177  0.648041273430582
-## 4        10         1          2   0.729650939287512  0.829875744449005
-## 5        36        14          6   0.020888203760886 0.0605414172269956
-## 6         3         0          3 0.00884432996166799 0.0345538930189214
+## 1         3         3          0   0.146852572988762   0.24642809183469
+## 2        24         9          0  0.0882966655233521  0.168735548166406
+## 3         8         1          3   0.526424531180179  0.648041273430584
+## 4        10         1          2   0.729650939287535  0.829875744449031
+## 5        36        14          6  0.0208882037608781 0.0605414172269767
+## 6         3         0          3 0.00884432996167321  0.034553893018911
 ##     direction
 ##   <character>
 ## 1          up
@@ -644,20 +644,20 @@ head(tabbest)
 ## DataFrame with 6 rows and 6 columns
 ##        best              logFC            logCPM                F
 ##   <integer>          <numeric>         <numeric>        <numeric>
-## 1         3   2.00153829256075 0.250287926080911 3.94030700891831
-## 2        15   6.45488225628961 0.712521465636674 11.9826122454746
-## 3        35    1.1783996686851 0.727376262089381 2.51421074291103
-## 4        43 -0.908825402006814   1.0234078969562 2.74637354889965
-## 5        60   6.57273805081489 0.809667875887923 14.9826446406264
-## 6        82  -5.64002491507422 0.584285981417485 14.0521867903517
+## 1         3   2.00153829256075 0.250287926080891  3.9403070089186
+## 2        15   6.45488225628961 0.712521465636628 11.9826122454754
+## 3        35    1.1783996686851 0.727376262089356 2.51421074291099
+## 4        43 -0.908825402006814   1.0234078969562 2.74637354889958
+## 5        60   6.57273805081489 0.809667875887879 14.9826446406268
+## 6        82  -5.64002491507422 0.584285981417552 14.0521867903502
 ##               PValue                FDR
 ##            <numeric>          <numeric>
-## 1  0.189147676521203  0.335560137526915
-## 2 0.0882966655233832  0.190582668485003
+## 1  0.189147676521167  0.335560137526852
+## 2 0.0882966655233521  0.190582668484939
 ## 3                  1                  1
 ## 4                  1                  1
-## 5 0.0464345919412303  0.121535973473348
-## 6  0.017688659923336 0.0636112904186925
+## 5 0.0464345919412199  0.121535973473321
+## 6 0.0176886599233464 0.0636112904186881
 ```
 
 In the above table, each row contains the statistics for each cluster.
@@ -919,23 +919,23 @@ sorted.ranges
 ##   [41616]     chr4   43043401-43043700      * |         4         0
 ##           logFC.down               PValue                  FDR   direction
 ##            <integer>            <numeric>            <numeric> <character>
-##       [1]         97 4.04797773669898e-11 1.22569557219871e-06        down
-##       [2]         57 7.13783570865257e-11 1.22569557219871e-06        down
-##       [3]         78 8.83575239474275e-11 1.22569557219871e-06        down
-##       [4]         51 1.23282008545395e-10 1.28262601690629e-06        down
-##       [5]         55 2.06286478303552e-10 1.54430072588657e-06        down
+##       [1]         97 4.04797773668499e-11 1.22569557219491e-06        down
+##       [2]         57 7.13783570863201e-11 1.22569557219491e-06        down
+##       [3]         78 8.83575239471534e-11 1.22569557219491e-06        down
+##       [4]         51 1.23282008545495e-10 1.28262601690733e-06        down
+##       [5]         55 2.06286478303051e-10 1.54430072588262e-06        down
 ##       ...        ...                  ...                  ...         ...
-##   [41612]          2    0.999832725345879     0.99990806288768       mixed
-##   [41613]          0     0.99988542130818     0.99990806288768       mixed
-##   [41614]          0     0.99990806288768     0.99990806288768       mixed
-##   [41615]          0     0.99990806288768     0.99990806288768          up
-##   [41616]          0     0.99990806288768     0.99990806288768       mixed
+##   [41612]          2    0.999832725328934    0.999908062838253       mixed
+##   [41613]          0      0.9998854212888    0.999908062838253       mixed
+##   [41614]          0    0.999908062838253    0.999908062838253       mixed
+##   [41615]          0    0.999908062838253    0.999908062838253          up
+##   [41616]          0    0.999908062838253    0.999908062838253       mixed
 ##            best.pos         best.logFC                            overlap
 ##           <integer>          <numeric>                           <factor>
 ##       [1]  34287575  -7.18686332236642   H2-Aa:-:PE,H2-Eb1:+:I,Notch4:+:I
 ##       [2] 109051575  -6.19603369122881                        Shisa5:+:PE
 ##       [3]  34262025  -7.70114852451639 H2-Ab1:+:PE,H2-Eb1:+:PE,Notch4:+:I
-##       [4]  34306075  -5.80798257689995             H2-Eb1:+:PE,Notch4:+:I
+##       [4]  34306075  -5.80798257689994             H2-Eb1:+:PE,Notch4:+:I
 ##       [5]  60804525  -5.98346376178937                          Cd74:+:PE
 ##       ...       ...                ...                                ...
 ##   [41612]  23752525  -0.77704982053454           Gm15972:-:PE,Mapre2:+:PE
@@ -982,7 +982,7 @@ cur.region
 ##   [1]    chr17 34285101-34290050      * |        97         0         97
 ##                     PValue                  FDR   direction  best.pos
 ##                  <numeric>            <numeric> <character> <integer>
-##   [1] 4.04797773669898e-11 1.22569557219871e-06        down  34287575
+##   [1] 4.04797773668499e-11 1.22569557219491e-06        down  34287575
 ##              best.logFC                          overlap        left
 ##               <numeric>                         <factor>    <factor>
 ##   [1] -7.18686332236642 H2-Aa:-:PE,H2-Eb1:+:I,Notch4:+:I H2-Aa:-:278
@@ -1037,9 +1037,9 @@ cur.region
 ##       seqnames              ranges strand |  nWindows  logFC.up logFC.down
 ##          <Rle>           <IRanges>  <Rle> | <integer> <integer>  <integer>
 ##   [1]     chr5 122987201-122991450      * |        83        18         43
-##                    PValue                  FDR   direction  best.pos
-##                 <numeric>            <numeric> <character> <integer>
-##   [1] 1.3097613510317e-08 1.33826057750863e-05        down 122990925
+##                     PValue                  FDR   direction  best.pos
+##                  <numeric>            <numeric> <character> <integer>
+##   [1] 1.30976135102916e-08 1.33826057750574e-05        down 122990925
 ##              best.logFC                       overlap         left
 ##               <numeric>                      <factor>     <factor>
 ##   [1] -5.48534588563145 A930024E05Rik:+:PE,Kdm2b:-:PE Kdm2b:-:2661
@@ -1097,7 +1097,7 @@ cur.region
 ##   [1]    chr16 36665551-36666200      * |        11         0         11
 ##                     PValue                  FDR   direction  best.pos
 ##                  <numeric>            <numeric> <character> <integer>
-##   [1] 1.29839663897788e-08 1.33826057750863e-05        down  36665925
+##   [1] 1.29839663897595e-08 1.33826057750574e-05        down  36665925
 ##              best.logFC   overlap     left    right
 ##               <numeric>  <factor> <factor> <factor>
 ##   [1] -4.93341819257933 Cd86:-:PE                  
@@ -1144,16 +1144,21 @@ sessionInfo()
 ```
 
 ```
-## R Under development (unstable) (2018-12-07 r75787)
-## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-## Running under: OS X El Capitan 10.11.6
+## R Under development (unstable) (2019-01-14 r75992)
+## Platform: x86_64-pc-linux-gnu (64-bit)
+## Running under: Ubuntu 16.04.5 LTS
 ## 
 ## Matrix products: default
-## BLAS: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRblas.0.dylib
-## LAPACK: /Library/Frameworks/R.framework/Versions/3.6/Resources/lib/libRlapack.dylib
+## BLAS: /home/cri.camres.org/lun01/Software/R/trunk/lib/libRblas.so
+## LAPACK: /home/cri.camres.org/lun01/Software/R/trunk/lib/libRlapack.so
 ## 
 ## locale:
-## [1] en_GB.UTF-8/en_GB.UTF-8/en_GB.UTF-8/C/en_GB.UTF-8/en_GB.UTF-8
+##  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    
+##  [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   
+##  [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 
+##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+## [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
 ##  [1] grid      stats4    parallel  stats     graphics  grDevices utils    
@@ -1161,39 +1166,39 @@ sessionInfo()
 ## 
 ## other attached packages:
 ##  [1] Gviz_1.27.5                             
-##  [2] ChIPpeakAnno_3.17.0                     
+##  [2] ChIPpeakAnno_3.17.2                     
 ##  [3] VennDiagram_1.6.20                      
 ##  [4] futile.logger_1.4.3                     
 ##  [5] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.4
-##  [6] GenomicFeatures_1.35.4                  
+##  [6] GenomicFeatures_1.35.6                  
 ##  [7] org.Mm.eg.db_3.7.0                      
 ##  [8] AnnotationDbi_1.45.0                    
 ##  [9] edgeR_3.25.3                            
-## [10] limma_3.39.3                            
-## [11] csaw_1.17.3                             
+## [10] limma_3.39.5                            
+## [11] csaw_1.17.4                             
 ## [12] SummarizedExperiment_1.13.0             
-## [13] DelayedArray_0.9.6                      
-## [14] BiocParallel_1.17.6                     
+## [13] DelayedArray_0.9.8                      
+## [14] BiocParallel_1.17.9                     
 ## [15] matrixStats_0.54.0                      
-## [16] Biobase_2.43.0                          
+## [16] Biobase_2.43.1                          
 ## [17] rtracklayer_1.43.1                      
 ## [18] bindrcpp_0.2.2                          
 ## [19] BiocFileCache_1.7.0                     
 ## [20] dbplyr_1.3.0                            
-## [21] Rsamtools_1.35.0                        
+## [21] Rsamtools_1.35.2                        
 ## [22] Biostrings_2.51.2                       
 ## [23] XVector_0.23.0                          
 ## [24] GenomicRanges_1.35.1                    
 ## [25] GenomeInfoDb_1.19.1                     
 ## [26] IRanges_2.17.4                          
-## [27] S4Vectors_0.21.9                        
+## [27] S4Vectors_0.21.10                       
 ## [28] BiocGenerics_0.29.1                     
-## [29] chipseqDBData_0.99.2                    
+## [29] chipseqDBData_0.99.3                    
 ## [30] knitr_1.21                              
 ## [31] BiocStyle_2.11.0                        
 ## 
 ## loaded via a namespace (and not attached):
-##   [1] colorspace_1.3-2              seqinr_3.4-5                 
+##   [1] colorspace_1.4-0              seqinr_3.4-5                 
 ##   [3] htmlTable_1.13.1              biovizBase_1.31.1            
 ##   [5] base64enc_0.1-3               dichromat_2.0-0              
 ##   [7] rstudioapi_0.9.0              bit64_0.9-7                  
@@ -1211,38 +1216,38 @@ sessionInfo()
 ##  [31] glue_1.3.0                    GenomeInfoDbData_1.2.0       
 ##  [33] dplyr_0.7.8                   rappdirs_0.3.1               
 ##  [35] Rcpp_1.0.0                    multtest_2.39.0              
-##  [37] ExperimentHub_1.9.0           xfun_0.4                     
+##  [37] ExperimentHub_1.9.1           xfun_0.4                     
 ##  [39] stringr_1.3.1                 mime_0.6                     
-##  [41] ensembldb_2.7.3               statmod_1.4.30               
+##  [41] ensembldb_2.7.8               statmod_1.4.30               
 ##  [43] XML_3.98-1.16                 idr_1.2                      
-##  [45] AnnotationHub_2.15.4          zlibbioc_1.29.0              
+##  [45] AnnotationHub_2.15.5          zlibbioc_1.29.0              
 ##  [47] MASS_7.3-51.1                 scales_1.0.0                 
-##  [49] BSgenome_1.51.0               VariantAnnotation_1.29.12    
+##  [49] BSgenome_1.51.0               VariantAnnotation_1.29.17    
 ##  [51] hms_0.4.2                     promises_1.0.1               
 ##  [53] ProtGenerics_1.15.0           RBGL_1.59.1                  
 ##  [55] AnnotationFilter_1.7.0        lambda.r_1.2.3               
 ##  [57] RColorBrewer_1.1-2            yaml_2.2.0                   
-##  [59] curl_3.2                      gridExtra_2.3                
+##  [59] curl_3.3                      gridExtra_2.3                
 ##  [61] memoise_1.1.0                 ggplot2_3.1.0                
 ##  [63] rpart_4.1-13                  biomaRt_2.39.2               
 ##  [65] latticeExtra_0.6-28           stringi_1.2.4                
 ##  [67] RSQLite_2.1.1                 highr_0.7                    
-##  [69] checkmate_1.8.5               rlang_0.3.1                  
+##  [69] checkmate_1.9.1               rlang_0.3.1                  
 ##  [71] pkgconfig_2.0.2               bitops_1.0-6                 
 ##  [73] evaluate_0.12                 lattice_0.20-38              
-##  [75] purrr_0.2.5                   bindr_0.1.1                  
+##  [75] purrr_0.3.0                   bindr_0.1.1                  
 ##  [77] htmlwidgets_1.3               GenomicAlignments_1.19.1     
 ##  [79] bit_1.1-14                    tidyselect_0.2.5             
 ##  [81] plyr_1.8.4                    magrittr_1.5                 
 ##  [83] bookdown_0.9                  R6_2.3.0                     
-##  [85] Hmisc_4.1-1                   DBI_1.0.0                    
+##  [85] Hmisc_4.2-0                   DBI_1.0.0                    
 ##  [87] foreign_0.8-71                pillar_1.3.1                 
 ##  [89] nnet_7.3-12                   survival_2.43-3              
-##  [91] RCurl_1.95-4.11               tibble_2.0.0                 
+##  [91] RCurl_1.95-4.11               tibble_2.0.1                 
 ##  [93] crayon_1.3.4                  futile.options_1.0.1         
 ##  [95] KernSmooth_2.23-15            rmarkdown_1.11               
 ##  [97] progress_1.2.0                locfit_1.5-9.1               
-##  [99] data.table_1.11.8             blob_1.1.1                   
+##  [99] data.table_1.12.0             blob_1.1.1                   
 ## [101] digest_0.6.18                 xtable_1.8-3                 
 ## [103] httpuv_1.4.5.1                regioneR_1.15.1              
 ## [105] munsell_0.5.0

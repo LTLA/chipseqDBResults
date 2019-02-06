@@ -9,7 +9,7 @@ author:
   affiliation: 
   - *WEHI 
   - Department of Mathematics and Statistics, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
-date: "2019-01-12"
+date: "2019-02-06"
 vignette: >
   %\VignetteIndexEntry{1. Introduction}
   %\VignetteEngine{knitr::rmarkdown}
@@ -29,11 +29,11 @@ bibliography: ref.bib
 
 # Workflow version information
 
-**R version**: R Under development (unstable) (2018-12-07 r75787)
+**R version**: R Under development (unstable) (2019-01-14 r75992)
 
 **Bioconductor version**: 3.9
   
-**Package**: 1.7.2
+**Package**: 1.7.5
 
 
 # Introduction
