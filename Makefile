@@ -20,7 +20,7 @@ ref.bib: src
 %.knit.md : %.Rmd ref.bib
 	${RCMD} --no-save --slave -e "rmarkdown::render('$<', clean=FALSE)"
 
-all: intro.knit.md cbp.knit.md h3k9ac.knit.md
+all: intro.knit.md cbp.knit.md h3k9ac.knit.md h3k27me3.knit.md
 
 # Cleaning commands.
 clean:
