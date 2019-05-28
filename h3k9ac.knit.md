@@ -1,15 +1,15 @@
 ---
-title: "Detecting differential enrichment of H3K9ac in murine B cells"
+title: Detecting differential enrichment of H3K9ac in murine B cells
 author:
-  - name: Aaron T. L. Lun
-    affiliation: 
-    - &WEHI The Walter and Eliza Hall Institute of Medical Research, 1G Royal Parade, Parkville, VIC 3052, Melbourne, Australia
-    - Department of Medical Biology, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
-  - name: Gordon K. Smyth
-    affiliation: 
-    - *WEHI
-    - Department of Mathematics and Statistics, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
-date: "2019-02-06"
+- name: Aaron T. L. Lun
+  affiliation: 
+  - &WEHI The Walter and Eliza Hall Institute of Medical Research, 1G Royal Parade, Parkville, VIC 3052, Melbourne, Australia
+  - Department of Medical Biology, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
+- name: Gordon K. Smyth
+  affiliation: 
+  - *WEHI
+  - Department of Mathematics and Statistics, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
+date: "2019-05-27"
 vignette: >
   %\VignetteIndexEntry{2. Differential enrichment of H3K9ac in B cells}
   %\VignetteEngine{knitr::rmarkdown}
@@ -27,7 +27,7 @@ bibliography: ref.bib
 
 Here, we perform a window-based differential binding (DB) analysis to identify regions of differential H3K9ac enrichment between pro-B and mature B cells [@domingo2012bcell].
 H3K9ac is associated with active promoters and tends to exhibit relatively narrow regions of enrichment relative to other marks such as H3K27me3.
-We download the BAM files using the relevant function from the *[chipseqDBData](https://bioconductor.org/packages/3.9/chipseqDBData)* package^[BAM files are cached upon the first call to this function, so subsequent calls do not need to re-download the files.].
+We download the BAM files using the relevant function from the *[chipseqDBData](https://bioconductor.org/packages/3.10/chipseqDBData)* package^[BAM files are cached upon the first call to this function, so subsequent calls do not need to re-download the files.].
 The experimental design contains two biological replicates for each of the two cell types.
 
 
@@ -45,20 +45,21 @@ acdata
 ## 2    h3k9ac-proB-8108    pro-B H3K9ac (8108)
 ## 3 h3k9ac-matureB-8059 mature B H3K9ac (8059)
 ## 4 h3k9ac-matureB-8086 mature B H3K9ac (8086)
-##                                                       Path
-##                                                <character>
-## 1    /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-proB-8113.bam
-## 2    /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-proB-8108.bam
-## 3 /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-matureB-8059.bam
-## 4 /tmp/RtmpfDLXU1/file1b4417248fba/h3k9ac-matureB-8086.bam
+##                                                      Path
+##                                               <character>
+## 1    /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-proB-8113.bam
+## 2    /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-proB-8108.bam
+## 3 /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-matureB-8059.bam
+## 4 /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-matureB-8086.bam
 ```
 
 # Pre-processing checks 
 
 ## Examining mapping statistics
 
-We use methods from the *[Rsamtools](https://bioconductor.org/packages/3.9/Rsamtools)* package to compute some mapping statistics for each BAM file.
-Ideally, the proportion of mapped reads should be high (70-80% or higher), while the proportion of marked reads should be low (below 20%).
+We use methods from the *[Rsamtools](https://bioconductor.org/packages/3.10/Rsamtools)* package to compute some mapping statistics for each BAM file.
+Ideally, the proportion of mapped reads should be high (70-80% or higher), 
+while the proportion of marked reads should be low (generally below 20%).
 
 
 ```r
@@ -86,6 +87,10 @@ diag.stats
 ## h3k9ac-matureB-8086.bam  6347683 4551692 141583    71.70635    3.110558
 ```
 
+Note that all *[csaw](https://bioconductor.org/packages/3.10/csaw)* functions that read from a BAM file require BAM indices with `.bai` suffixes.
+In this case, index files have already been downloaded by `H3K9acData()`, 
+but users supplying their own files should take care to ensure that BAM indices are available with appropriate names.
+
 ## Obtaining the ENCODE blacklist for mm10
 
 A number of genomic regions contain high artifactual signal in ChIP-seq experiments.
@@ -97,8 +102,8 @@ Moreover, differences in repeat copy numbers between conditions can lead to dete
 As such, these problematic regions must be removed prior to further analysis.
 This is done with an annotated blacklist for the mm10 build of the mouse genome, 
 constructed by identifying consistently problematic regions from ENCODE datasets [@encode2012encode].
-We download this BED file and save it into a local cache with the *[BiocFileCache](https://bioconductor.org/packages/3.9/BiocFileCache)* package.
-This allows it to be used again in later workflows without requiring a new download.
+We download this BED file and save it into a local cache with the *[BiocFileCache](https://bioconductor.org/packages/3.10/BiocFileCache)* package.
+This allows it to be used again in later workflows without being re-downloaded.
 
 
 ```r
@@ -108,8 +113,8 @@ black.path <- bfcrpath(bfc, file.path("https://www.encodeproject.org",
     "files/ENCFF547MET/@@download/ENCFF547MET.bed.gz"))
 ```
 
-Genomic intervals in the blacklist are loaded to memory using the `import()` method from the *[rtracklayer](https://bioconductor.org/packages/3.9/rtracklayer)* package.
-All reads mapped to those intervals will be ignored during processing in *[csaw](https://bioconductor.org/packages/3.9/csaw)* by specifying the `discard=` parameter (see below).
+Genomic intervals in the blacklist are loaded using the `import()` method from the *[rtracklayer](https://bioconductor.org/packages/3.10/rtracklayer)* package.
+All reads mapped within the blacklisted intervals will be ignored during processing in *[csaw](https://bioconductor.org/packages/3.10/csaw)* by specifying the `discard=` parameter (see below).
 
 
 ```r
@@ -143,13 +148,13 @@ Any user-defined set of regions can be used as a blacklist in this analysis.
 This tends to remove a greater number of problematic regions (especially microsatellites) compared to the ENCODE blacklist.
 However, the size of the UCSC list means that genuine DB sites may also be removed.
 Thus, the ENCODE blacklist is preferred for most applications.
-- Alternatively, if negative control libraries are available, they can be used to empirically identify problematic regions with the *[GreyListChIP](https://bioconductor.org/packages/3.9/GreyListChIP)* package.
+- Alternatively, if negative control samples are available, they can be used to empirically identify problematic regions with the *[GreyListChIP](https://bioconductor.org/packages/3.10/GreyListChIP)* package.
 These regions should be ignored as they have high coverage in the controls and are unlikely to be genuine binding sites.
 
 ## Setting up the read extraction parameters
 
-In the *[csaw](https://bioconductor.org/packages/3.9/csaw)* package, the `readParam` object determines which reads are extracted from the BAM files.
-The idea is to set this up once and to re-use it in all relevant functions.
+In the *[csaw](https://bioconductor.org/packages/3.10/csaw)* package, the `readParam` object determines which reads are extracted from the BAM files.
+The intention is to set this up once and to re-use it in all relevant functions.
 For this analysis, reads are ignored if they map to blacklist regions or do not map to the standard set of mouse nuclear chromosomes^[In this case, we are not interested in the mitochondrial genome, as these should not be bound by histones anyway.].
 
 
@@ -159,7 +164,7 @@ standard.chr <- paste0("chr", c(1:19, "X", "Y"))
 param <- readParam(minq=20, discard=blacklist, restrict=standard.chr)
 ```
 
-Reads are also ignored if they have a mapping quality (MAPQ) score below 20^[This is more stringent than usual, to account for the fact that short reads (32-36 bp) are more difficult to accurately align.].
+Reads are also ignored if they have a mapping quality (MAPQ) score below 20^[This is more stringent than usual, to account for the fact that the short reads ued here (32-36 bp) are more difficult to accurately align.].
 This avoids spurious results due to weak or non-unique alignments that should be assigned low MAPQ scores by the aligner.
 Note that the range of MAPQ scores will vary between aligners, so some inspection of the BAM files is necessary to choose an appropriate value.
 
@@ -168,7 +173,7 @@ Note that the range of MAPQ scores will vary between aligners, so some inspectio
 Strand bimodality is often observed in ChIP-seq experiments involving narrow binding events like H3K9ac marking.
 This refers to the presence of distinct subpeaks on each strand and is quantified with cross-correlation plots [@kharchenko2008design].
 A strong peak in the cross-correlations should be observed if immunoprecipitation was successful.
-The delay distance at the peak corresponds to the distance between forward-/reverse-strand subpeaks.
+The delay distance at the peak corresponds to the distance between forward- and reverse-strand subpeaks.
 This is identified from Figure \@ref(fig:ccfplot) and is used as the average fragment length for this analysis.
 
 
@@ -196,26 +201,27 @@ text(x=frag.len, y=min(x), paste(frag.len, "bp"), pos=4, col="red")
 
 Only unmarked reads (i.e., not potential PCR duplicates) are used to calculate the cross-correlations.
 This reduces noise from variable PCR amplification and decreases the size of the "phantom" peak at the read length [@landt2012chipseq].
-However, removal of marked reads is risky as it caps the signal in high-coverage regions of the genome.
+However, general removal of marked reads is risky as it caps the signal in high-coverage regions of the genome.
 This can result in loss of power to detect DB, or introduction of spurious DB when the same cap is applied to libraries of different sizes.
 Thus, the marking status of each read will be ignored in the rest of the analysis, i.e., no duplicates will be removed in downstream steps.
 
 # Counting reads into windows
 
-*[csaw](https://bioconductor.org/packages/3.9/csaw)* uses a sliding window strategy to quantify protein binding intensity across the genome.
+*[csaw](https://bioconductor.org/packages/3.10/csaw)* uses a sliding window strategy to quantify protein binding intensity across the genome.
 Each read is directionally extended to the average fragment length (Figure \@ref(fig:directional)) to represent the DNA fragment from which that read was sequenced.
 Any position within the inferred fragment is a potential contact site for the protein of interest.
 To quantify binding in a genomic window, the number of these fragments overlapping the window is counted.
 The window is then moved to its next position on the genome and counting is repeated^[Each read is usually counted into multiple windows, which will introduce correlations between adjacent windows but will not otherwise affect the analysis.].
-This is done for all libraries such that a count is obtained for each window in each library.
+This is done for all samples such that a count is obtained for each window in each sample. 
 
 <div class="figure">
 <img src="h3k9ac_files/figure-html/directional-1.png" alt="Directional extension of reads by the average fragment length `ext` in single-end ChIP-seq data. Each extended read represents an imputed fragment, and the number of fragments overlapping a window of a given `width` is counted." width="100%"  class="widefigure" />
 <p class="caption">(\#fig:directional)Directional extension of reads by the average fragment length `ext` in single-end ChIP-seq data. Each extended read represents an imputed fragment, and the number of fragments overlapping a window of a given `width` is counted.</p>
 </div>
 
-The `windowCounts()` function produces a `RangedSummarizedExperiment` object containing these counts in matrix form.
-Each row corresponds to a window and each column represents a library.
+The `windowCounts()` function produces a `RangedSummarizedExperiment` object containing a matrix of such counts.
+Each row corresponds to a window; each column represents a BAM file corresponding to a single sample^[Counting can be parallelized across files using the `BPPARAM=` argument.];
+and each entry of the matrix represents the number of fragments overlapping a particular window in a particular sample. 
 
 
 ```r
@@ -239,7 +245,7 @@ This corresponds roughly to the length of the DNA in a nucleosome [@humburg2011c
 The spacing between windows is set to the default of 50 bp, i.e., the start positions for adjacent windows are 50 bp apart.
 Smaller spacings can be used to improve spatial resolution, but will increase memory usage and runtime by increasing the number of windows required to cover the genome.
 This is unnecessary as increased resolution confers little practical benefit for this data set -- counts for very closely spaced windows will be practically identical.
-Finally, windows with very low counts (by default, less than a sum of 10 across all libraries) are removed to reduce memory usage.
+Finally, windows with very low counts (by default, less than a sum of 10 across all samples) are removed to reduce memory usage.
 This represents a preliminary filter to remove uninteresting windows corresponding to likely background regions.
 
 # Filtering windows by abundance
@@ -255,7 +261,7 @@ The filter threshold is defined based on the assumption that most regions in the
 Reads are counted into large bins and the median coverage across those bins is used as an estimate of the background abundance^[Large bins are necessary to obtain a precise estimate of background coverage, which would otherwise be too low in individual windows.].
 This estimate is then compared to the average abundances of the windows, after rescaling to account for differences in the window and bin sizes.
 A window is only retained if its coverage is 3-fold higher than that of the background regions,
-    i.e., the abundance of the window is greater than the background abundance estimate by log~2~(3) or more.
+i.e., the abundance of the window is greater than the background abundance estimate by log~2~(3) or more.
 This removes a large number of windows that are weakly or not marked and are likely to be irrelevant.
 
 
@@ -289,18 +295,18 @@ abline(v=threshold, col="red")
 <p class="caption">(\#fig:bghistplot)Histogram of average abundances across all 2 kbp genomic bins. The filter threshold is shown as the red line.</p>
 </div>
 
-The actual filtering itself is done by simply subsetting the `RangedSummarizedExperiment` object.
+The filtering itself is done by simply subsetting the `RangedSummarizedExperiment` object.
 
 
 ```r
 filtered.data <- win.data[keep,]
 ```
 
-# Normalizing for library-specific trended biases
+# Normalizing for sample-specific trended biases
 
-Normalization is required to eliminate confounding library-specific biases prior to any comparisons between libraries.
-Here, a trended bias is present between libraries in Figure \@ref(fig:trendplot).
-This refers to a systematic fold-difference in window coverage between libraries that changes according to the average abundance of the window.
+Normalization is required to eliminate confounding sample-specific biases prior to any comparisons between samples.
+Here, a trended bias is present between samples in Figure \@ref(fig:trendplot).
+This refers to a systematic fold-difference in per-window coverage between samples that changes according to the average abundance of the window.
 
 
 ```r
@@ -316,14 +322,14 @@ lines(win.ab[o], fitted(lfit)[o], col="red", lty=2)
 ```
 
 <div class="figure">
-<img src="h3k9ac_files/figure-html/trendplot-1.png" alt="Abundance-dependent trend in the log-fold change between two H3K9ac libraries (mature B over pro-B), across all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red." width="100%" />
-<p class="caption">(\#fig:trendplot)Abundance-dependent trend in the log-fold change between two H3K9ac libraries (mature B over pro-B), across all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red.</p>
+<img src="h3k9ac_files/figure-html/trendplot-1.png" alt="Abundance-dependent trend in the log-fold change between two H3K9ac samples (mature B over pro-B), across all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red." width="100%" />
+<p class="caption">(\#fig:trendplot)Abundance-dependent trend in the log-fold change between two H3K9ac samples (mature B over pro-B), across all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red.</p>
 </div>
 
 Trended biases cannot be removed by scaling methods like TMM normalization [@robinson2010scaling], as the amount of scaling required varies with the abundance of the window.
 Rather, non-linear normalization methods must be used.
-*[csaw](https://bioconductor.org/packages/3.9/csaw)* implements a version of the fast loess method [@ballman2004fast] that has been modified to handle count data [@lun2015csaw].
-This produces a matrix of offsets that can be used during GLM fitting.
+*[csaw](https://bioconductor.org/packages/3.10/csaw)* implements a version of the fast loess method [@ballman2004fast] that has been modified to handle count data [@lun2015csaw].
+This produces a matrix of offsets that can be used during model fitting.
 
 
 ```r
@@ -345,7 +351,7 @@ head(offsets)
 The effect of non-linear normalization is visualized with another mean-difference plot.
 Once the offsets are applied to adjust the log-fold changes, the trend is eliminated from the plot (Figure \@ref(fig:normplot)).
 The cloud of points is also centred at a log-fold change of zero.
-This indicates that normalization was successful in removing the differences between libraries.
+This indicates that normalization was successful in removing the differences between samples. 
 
 
 ```r
@@ -359,23 +365,23 @@ lines(win.ab[o], fitted(lfit)[o], col="red", lty=2)
 ```
 
 <div class="figure">
-<img src="h3k9ac_files/figure-html/normplot-1.png" alt="Effect of non-linear normalization on the trended bias between two H3K9ac libraries. Normalized log-fold changes are shown for all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red." width="100%" />
-<p class="caption">(\#fig:normplot)Effect of non-linear normalization on the trended bias between two H3K9ac libraries. Normalized log-fold changes are shown for all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red.</p>
+<img src="h3k9ac_files/figure-html/normplot-1.png" alt="Effect of non-linear normalization on the trended bias between two H3K9ac samples. Normalized log-fold changes are shown for all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red." width="100%" />
+<p class="caption">(\#fig:normplot)Effect of non-linear normalization on the trended bias between two H3K9ac samples. Normalized log-fold changes are shown for all windows retained after filtering. A smoothed spline fitted to the log-fold change against the average abundance is also shown in red.</p>
 </div>
 
 The implicit assumption of non-linear methods is that most windows at each abundance are not DB.
-Any systematic difference between libraries is attributed to bias and is removed.
+Any systematic difference between samples is attributed to bias and is removed.
 The assumption of a non-DB majority is reasonable for this data set, given that the cell types being compared are quite closely related.
 However, it is not appropriate in cases where large-scale DB is expected, as removal of the difference would result in loss of genuine DB.
-An alternative normalization strategy for these situations will be described later in the CBP analysis.
+An alternative normalization strategy for these situations will be described later in the [CBP analysis](https://bioconductor.org/packages/3.10/chipseqDB/vignettes/cbp.html#normalization-for-composition-biases).
 
 # Statistical modelling of biological variability
 
-## Introduction
+## Setting up the design matrix 
 
-Counts are modelled using negative binomial generalized linear models (NB GLMs) in the *[edgeR](https://bioconductor.org/packages/3.9/edgeR)* package [@mccarthy2012differential; @robinson2010edger].
+Counts are modelled using negative binomial generalized linear models (NB GLMs) in the *[edgeR](https://bioconductor.org/packages/3.10/edgeR)* package [@mccarthy2012differential; @robinson2010edger].
 The NB distribution is useful as it can handle low, discrete counts for each window.
-The NB dispersion parameter allows modelling of biological variability between replicate libraries.
+The NB dispersion parameter allows modelling of biological variability between replicate samples. 
 GLMs can also accommodate complex experimental designs, though a simple design is sufficient for this study.
 
 
@@ -409,7 +415,7 @@ Obviously, more replicates will provide more power to detect DB accurately and r
 
 ## Estimating the NB dispersion
 
-The `RangedSummarizedExperiment` object is coerced into a `DGEList` object (plus offsets) for use in *[edgeR](https://bioconductor.org/packages/3.9/edgeR)*.
+The `RangedSummarizedExperiment` object is coerced into a `DGEList` object (plus offsets) for use in *[edgeR](https://bioconductor.org/packages/3.10/edgeR)*.
 Estimation of the NB dispersion is performed using the `estimateDisp` function.
 Specifically, a NB dispersion trend is fitted to all windows against the average abundance.
 This means that empirical mean-dispersion trends can be flexibly modelled.
@@ -461,14 +467,14 @@ plotBCV(y)
 <p class="caption">(\#fig:bcvplot)Abundance-dependent trend in the BCV for each window, represented by the blue line. Common (red) and tagwise estimates (black) are also shown.</p>
 </div>
 
-For most data sets, one would expect to see a trend that decreases to a plateau with increasing average abundance.
+For most sequencing count data, we expect to see a decreasing trend that plateaus with increasing average abundance.
 This reflects the greater reliability of large counts, where the effects of stochasticity and technical artifacts (e.g., mapping errors, PCR duplicates) are averaged out.
 We observe no clear trend in Figure \@ref(fig:bcvplot) as the windows have already been filtered to the plateau.
 This is still a satisfactory result as it indicates that the retained windows have low variability and more power to detect DB.
 
 ## Estimating the QL dispersion
 
-Additional modelling is provided with the QL methods in *[edgeR](https://bioconductor.org/packages/3.9/edgeR)* [@lund2012ql].
+Additional modelling is provided with the QL methods in *[edgeR](https://bioconductor.org/packages/3.10/edgeR)* [@lund2012ql].
 This introduces a QL dispersion parameter for each window, which captures variability in the NB dispersion around the fitted trend for each window.
 Thus, the QL dispersion can model window-specific variability, whereas the NB dispersion trend is averaged across many windows.
 However, with limited replicates, there is not enough information for each window to stably estimate the QL dispersion.
@@ -506,10 +512,11 @@ This is particularly noticeable in Figure \@ref(fig:qlplot) with highly variable
 
 ## Examining the data with MDS plots
 
-Multi-dimensional scaling (MDS) plots are used to examine the similarities between libraries.
-The distance between a pair of libraries on this plot represents the overall log-fold change between those libraries.
+Multi-dimensional scaling (MDS) plots are used to examine the similarities between samples. 
+The distance between a pair of samples on this plot represents the overall log-fold change between those samples. 
 Ideally, replicates should cluster together while samples from different conditions should be separate.
-Libraries from different cell types separate well in Figure \@ref(fig:mdsplot), indicating that significant differences are likely to be present between cell types.
+While the mature B replicates are less tightly grouped, samples still separate by cell type in Figure \@ref(fig:mdsplot).
+This suggests that our downstream analysis will be able to detect significant differences in enrichment between cell types.
 
 
 ```r
@@ -518,8 +525,8 @@ plotMDS(norm.adjc, labels=celltype,
 ```
 
 <div class="figure">
-<img src="h3k9ac_files/figure-html/mdsplot-1.png" alt="MDS plot with two dimensions for all libraries in the H3K9ac data set. Libraries are labelled and coloured according to the cell type." width="100%" />
-<p class="caption">(\#fig:mdsplot)MDS plot with two dimensions for all libraries in the H3K9ac data set. Libraries are labelled and coloured according to the cell type.</p>
+<img src="h3k9ac_files/figure-html/mdsplot-1.png" alt="MDS plot with two dimensions for all samples in the H3K9ac data set. Samples are labelled and coloured according to the cell type." width="100%" />
+<p class="caption">(\#fig:mdsplot)MDS plot with two dimensions for all samples in the H3K9ac data set. Samples are labelled and coloured according to the cell type.</p>
 </div>
 
 # Testing for DB and controlling the FDR
@@ -528,7 +535,7 @@ plotMDS(norm.adjc, labels=celltype,
 
 Each window is tested for significant differences between cell types using the QL F-test [@lund2012ql].
 This is superior to the likelihood ratio test that is typically used for GLMs, as the QL F-test accounts for the uncertainty in dispersion estimation.
-One *p*-value is produced for each window, representing the evidence against the null hypothesis (i.e., that no DB is present in the window).
+One $p$-value is produced for each window, representing the evidence against the null hypothesis (i.e., that no DB is present in the window).
 For this analysis, the comparison is parametrized such that the reported log-fold change for each window represents that of the coverage in pro-B cells over their mature B counterparts.
 
 
@@ -550,27 +557,48 @@ head(res$table)
 
 ## Controlling the FDR across regions
 
-One might attempt to control the FDR by applying the Benjamini-Hochberg (BH) method to the window-level *p*-values [@benjamini1995controlling].
+One might attempt to control the FDR by applying the Benjamini-Hochberg (BH) method to the window-level $p$-values [@benjamini1995controlling].
 However, the features of interest are not windows, but the genomic regions that they represent.
 Control of the FDR across windows does not guarantee control of the FDR across regions [@lun2014denovo].
 The latter is arguably more relevant for the final interpretation of the results.
 
-Control of the region-level FDR is achieved by aggregating windows into regions and combining the *p*-values.
+We instead control the region-level FDR by aggregating windows into regions and combining the $p$-values.
 Here, adjacent windows less than 100 bp apart are aggregated into clusters.
 Each cluster represents a genomic region.
 Smaller values of `tol` allow distinct marking events to kept separate,
-   while larger values provide a broader perspective, e.g., by considering adjacent co-regulated sites as a single entity.
+while larger values provide a broader perspective, e.g., by considering adjacent co-regulated sites as a single entity.
 Chaining effects are mitigated by setting a maximum cluster width of 5 kbp.
 
 
 ```r
 merged <- mergeWindows(rowRanges(filtered.data), tol=100, max.width=5000)
+merged$region
 ```
 
-A combined *p*-value is computed for each cluster using the method of @simes1986, based on the *p*-values of the constituent windows.
+```
+## GRanges object with 41616 ranges and 0 metadata columns:
+##           seqnames            ranges strand
+##              <Rle>         <IRanges>  <Rle>
+##       [1]     chr1   4775451-4775750      *
+##       [2]     chr1   4785001-4786300      *
+##       [3]     chr1   4807251-4807750      *
+##       [4]     chr1   4808001-4808600      *
+##       [5]     chr1   4857051-4858950      *
+##       ...      ...               ...    ...
+##   [41612]     chrY 73038001-73038400      *
+##   [41613]     chrY 75445801-75446200      *
+##   [41614]     chrY 88935951-88936350      *
+##   [41615]     chrY 90554201-90554400      *
+##   [41616]     chrY 90812801-90813100      *
+##   -------
+##   seqinfo: 21 sequences from an unspecified genome
+```
+
+A combined $p$-value is computed for each cluster using the method of @simes1986, 
+based on the $p$-values of the constituent windows.
 This represents the evidence against the global null hypothesis for each cluster, i.e., that no DB exists in any of its windows.
 Rejection of this global null indicates that the cluster (and the region that it represents) contains DB.
-Applying the BH method to the combined *p*-values allows the region-level FDR to be controlled.
+Applying the BH method to the combined $p$-values allows the region-level FDR to be controlled.
 
 
 ```r
@@ -598,12 +626,15 @@ head(tabcom)
 ## 6        down
 ```
 
-Each row of the output table contains the statistics for a single cluster, including the combined *p*-value before and after the BH correction.
-Additional fields include `nWindows`, the total number of windows in the cluster; `logFC.up`, the number of windows with a DB log-fold change above 0.5; and `log.FC.down`, the number fof windows with a log-fold change below -0.5.
+Each row of the output table contains the statistics for a single cluster, 
+including the combined *p*-value before and after the BH correction.
+Additional fields include `nWindows`, the total number of windows in the cluster; 
+`logFC.up`, the number of windows with a DB log-fold change above 0.5; 
+and `log.FC.down`, the number fof windows with a log-fold change below -0.5.
 
 ## Examining the scope and direction of DB
 
-The total number of DB regions at a FDR of 5% is easily calculated.
+We can easily calculate the total number of DB regions at a FDR of 5%.
 
 
 ```r
@@ -662,8 +693,9 @@ head(tabbest)
 
 In the above table, each row contains the statistics for each cluster.
 Of interest are the `best` and `logFC` fields.
-The former is the index of the window that is the most significant in each cluster, while the latter is the log-fold change of that window.
-This is used to obtain a summary of the direction of DB across all clusters/regions.
+The former is the index of the window that is the most significant in each cluster, 
+while the latter is the log-fold change of that window.
+This is used to obtain a summary of the direction of DB across all clusters.
 
 
 ```r
@@ -677,13 +709,14 @@ summary(is.sig.pos)
 ```
 
 This approach is generally satisfactory, though it will not capture multiple changes in opposite directions^[Try `mixedClusters()` to formally detect clusters that contain significant changes in both directions.].
-It also tends to overstate the change in each cluster.
+It also tends to overstate the magnitude of the log-fold change in each cluster.
 
 # Saving results to file
 
 One approach to saving results is to store all statistics in the metadata of a `GRanges` object.
-This is useful as it keeps the statistics and coordinates together for each cluster, avoiding problems with synchronization in downstream steps.
-The midpoint and log-fold change of the best window are also stored.
+This is useful as it keeps the statistics and coordinates together for each cluster, 
+avoiding problems with synchronization in downstream steps.
+We also store the midpoint and log-fold change of the most significant window in each cluster.
 The updated `GRanges` object is then saved to file as a serialized R object with the `saveRDS` function.
 
 
@@ -696,7 +729,7 @@ saveRDS(file="h3k9ac_results.rds", out.ranges)
 ```
 
 For input into other programs like genome browsers, results need to be saved in a more conventional format.
-Here, coordinates of DB regions are saved in BED format via *[rtracklayer](https://bioconductor.org/packages/3.9/rtracklayer)*, using a log-transformed FDR as the score.
+Here, coordinates of DB regions are saved in BED format via *[rtracklayer](https://bioconductor.org/packages/3.10/rtracklayer)*, using the log-transformed FDR as the score.
 
 
 ```r
@@ -705,24 +738,17 @@ simplified$score <- -10*log10(simplified$FDR)
 export(con="h3k9ac_results.bed", object=simplified)
 ```
 
-Saving the `RangedSummarizedExperiment` objects is also recommended.
-This avoids the need to re-run the time-consuming read counting steps if parts of the analysis need to be repeated.
-
-
-```r
-save(file="h3k9ac_objects.Rda", win.data, bins)
-```
-
 # Interpreting the DB results
 
 ## Adding gene-centric annotation
 
 ### Using the `detailRanges` function
 
-*[csaw](https://bioconductor.org/packages/3.9/csaw)* provides its own annotation function, `detailRanges`.
+*[csaw](https://bioconductor.org/packages/3.10/csaw)* provides its own annotation function, `detailRanges()`.
 This identifies all genic features overlapping each region and reports them in a compact string form.
 Briefly, features are reported as `SYMBOL:STRAND:TYPE` where `SYMBOL` represents the gene symbol;
-`STRAND` reports the strand of the gene; and `TYPE` reports the type(s) of overlapped feature, e.g., `E` for exons, `P` for promoters, `I` for introns^[Introns are only reported if an exon is not overlapped.].
+`STRAND` reports the strand of the gene; and `TYPE` reports the type(s) of overlapped feature, 
+e.g., `E` for exons, `P` for promoters, `I` for introns^[Introns are only reported if an exon is not overlapped.].
 
 
 ```r
@@ -734,8 +760,8 @@ head(anno$overlap)
 ```
 
 ```
-## [1] "Mrpl15:-:E"  "Mrpl15:-:PE" "Lypla1:+:P"  "Lypla1:+:PE" "Tcea1:+:PE" 
-## [6] "Rgs20:-:I"
+## [1] "Mrpl15:-:E"            "Mrpl15:-:PE"           "Lypla1:+:P"           
+## [4] "Lypla1:+:PE"           "Lypla1:+:I,Tcea1:+:PE" "Rgs20:-:I"
 ```
 
 Annotated features that flank the region of interest are also reported.
@@ -757,8 +783,8 @@ head(anno$right)
 ```
 
 ```
-## [1] "Mrpl15:-:1775" ""              "Lypla1:+:143"  ""             
-## [5] ""              ""
+## [1] "Mrpl15:-:627" ""             "Lypla1:+:38"  ""            
+## [5] ""             ""
 ```
 
 The annotation for each region is stored in the metadata of the `GRanges` object.
@@ -770,9 +796,9 @@ meta <- mcols(out.ranges)
 mcols(out.ranges) <- data.frame(meta, anno)
 ```
 
-### Using the *[ChIPpeakAnno](https://bioconductor.org/packages/3.9/ChIPpeakAnno)* package
+### Using the *[ChIPpeakAnno](https://bioconductor.org/packages/3.10/ChIPpeakAnno)* package
 
-As its name suggests, the *[ChIPpeakAnno](https://bioconductor.org/packages/3.9/ChIPpeakAnno)* package is designed to annotate peaks from ChIP-seq experiments [@zhu2010chippeakanno].
+As its name suggests, the *[ChIPpeakAnno](https://bioconductor.org/packages/3.10/ChIPpeakAnno)* package is designed to annotate peaks from ChIP-seq experiments [@zhu2010chippeakanno].
 A `GRanges` object containing all regions of interest is supplied to the relevant function after removing all previous metadata fields to reduce clutter.
 The gene closest to each region is then reported.
 Gene coordinates are taken from the NCBI mouse 38 annotation, which is roughly equivalent to the annotation in the mm10 genome build.
@@ -818,22 +844,22 @@ head(prom)
 
 ```
 ## GRanges object with 6 ranges and 3 metadata columns:
-##              seqnames          ranges strand |     tx_name         gene_id
-##                 <Rle>       <IRanges>  <Rle> | <character> <CharacterList>
-##   uc007afg.1     chr1 4804893-4808892      + |  uc007afg.1           18777
-##   uc007afh.1     chr1 4804893-4808892      + |  uc007afh.1           18777
-##   uc007afi.2     chr1 4854694-4858693      + |  uc007afi.2           21399
-##   uc011wht.1     chr1 4854694-4858693      + |  uc011wht.1           21399
-##   uc011whu.1     chr1 4855328-4859327      + |  uc011whu.1           21399
-##   uc057aty.1     chr1 4881322-4885321      + |  uc057aty.1            <NA>
-##                gene_name
-##              <character>
-##   uc007afg.1      Lypla1
-##   uc007afh.1      Lypla1
-##   uc007afi.2       Tcea1
-##   uc011wht.1       Tcea1
-##   uc011whu.1       Tcea1
-##   uc057aty.1        <NA>
+##                        seqnames          ranges strand |
+##                           <Rle>       <IRanges>  <Rle> |
+##   ENSMUST00000193812.1     chr1 3070253-3074252      + |
+##   ENSMUST00000082908.1     chr1 3099016-3103015      + |
+##   ENSMUST00000192857.1     chr1 3249757-3253756      + |
+##   ENSMUST00000161581.1     chr1 3463587-3467586      + |
+##   ENSMUST00000192183.1     chr1 3528795-3532794      + |
+##   ENSMUST00000193244.1     chr1 3677155-3681154      + |
+##                                     tx_name         gene_id   gene_name
+##                                 <character> <CharacterList> <character>
+##   ENSMUST00000193812.1 ENSMUST00000193812.1            <NA>        <NA>
+##   ENSMUST00000082908.1 ENSMUST00000082908.1            <NA>        <NA>
+##   ENSMUST00000192857.1 ENSMUST00000192857.1            <NA>        <NA>
+##   ENSMUST00000161581.1 ENSMUST00000161581.1            <NA>        <NA>
+##   ENSMUST00000192183.1 ENSMUST00000192183.1            <NA>        <NA>
+##   ENSMUST00000193244.1 ENSMUST00000193244.1            <NA>        <NA>
 ##   -------
 ##   seqinfo: 66 sequences (1 circular) from mm10 genome
 ```
@@ -847,24 +873,25 @@ Promoters with no overlapping windows are assigned `NA` values for the various f
 ```r
 olap <- findOverlaps(prom, rowRanges(filtered.data))
 tabprom <- combineOverlaps(olap, res$table)
-head(data.frame(ID=prom$tx_name, Gene=prom$gene_name, tabprom)[!is.na(tabprom$PValue),])
+with.anno <- data.frame(ID=prom$tx_name, Gene=prom$gene_name, tabprom)
+head(with.anno[!is.na(with.anno$PValue),])
 ```
 
 ```
-##           ID    Gene nWindows logFC.up logFC.down      PValue        FDR
-## 1 uc007afg.1  Lypla1       18        2          5 0.700464902 0.73569721
-## 2 uc007afh.1  Lypla1       18        2          5 0.700464902 0.73569721
-## 3 uc007afi.2   Tcea1       33       14          3 0.019147520 0.04126082
-## 4 uc011wht.1   Tcea1       33       14          3 0.019147520 0.04126082
-## 5 uc011whu.1   Tcea1       36       14          6 0.020888204 0.04364185
-## 7 uc007afm.2 Atp6v1h       17        7          8 0.006682572 0.02165736
-##   direction
-## 1     mixed
-## 2     mixed
-## 3        up
-## 4        up
-## 5        up
-## 7     mixed
+##                       ID   Gene nWindows logFC.up logFC.down    PValue
+## 14  ENSMUST00000134384.7 Lypla1       18        2          5 0.7004649
+## 15 ENSMUST00000027036.10 Lypla1       18        2          5 0.7004649
+## 16  ENSMUST00000150971.7 Lypla1       18        2          5 0.7004649
+## 17  ENSMUST00000155020.1 Lypla1       18        2          5 0.7004649
+## 18  ENSMUST00000119612.8 Lypla1       18        2          5 0.7004649
+## 19  ENSMUST00000137887.7 Lypla1       18        2          5 0.7004649
+##          FDR direction
+## 14 0.7393987     mixed
+## 15 0.7393987     mixed
+## 16 0.7393987     mixed
+## 17 0.7393987     mixed
+## 18 0.7393987     mixed
+## 19 0.7393987     mixed
 ```
 
 Note that this strategy is distinct from counting reads across promoters.
@@ -876,7 +903,7 @@ Combining window-level statistics is preferable as resolution is maintained for 
 
 ## Overview
 
-Here, the *[Gviz](https://bioconductor.org/packages/3.9/Gviz)* package is used to visualize read coverage across the data set at regions of interest [@hahne2016visualizing].
+Here, the *[Gviz](https://bioconductor.org/packages/3.10/Gviz)* package is used to visualize read coverage across the data set at regions of interest [@hahne2016visualizing].
 Coverage in each BAM file will be represented by a single track.
 Several additional tracks will also be included in each plot.
 One is the genome axis track, to display the genomic coordinates across the plotted region.
@@ -930,32 +957,32 @@ sorted.ranges
 ##   [41614]          0    0.999908062838253    0.999908062838253       mixed
 ##   [41615]          0    0.999908062838253    0.999908062838253          up
 ##   [41616]          0    0.999908062838253    0.999908062838253       mixed
-##            best.pos         best.logFC                            overlap
-##           <integer>          <numeric>                           <factor>
-##       [1]  34287575  -7.18686332236642   H2-Aa:-:PE,H2-Eb1:+:I,Notch4:+:I
-##       [2] 109051575  -6.19603369122881                        Shisa5:+:PE
-##       [3]  34262025  -7.70114852451639 H2-Ab1:+:PE,H2-Eb1:+:PE,Notch4:+:I
-##       [4]  34306075  -5.80798257689994             H2-Eb1:+:PE,Notch4:+:I
-##       [5]  60804525  -5.98346376178937                          Cd74:+:PE
-##       ...       ...                ...                                ...
-##   [41612]  23752525  -0.77704982053454           Gm15972:-:PE,Mapre2:+:PE
-##   [41613]  83922125  0.880874875114293                           Numb:-:P
-##   [41614]  99395425 -0.411300240851034                         Tmbim6:+:I
-##   [41615]  67504275  0.491618329274888                        Rarres1:-:I
-##   [41616]  43043575   0.17425353617959                        Fam214b:-:I
+##            best.pos         best.logFC                  overlap
+##           <integer>          <numeric>                 <factor>
+##       [1]  34287575  -7.18686332236642               H2-Aa:-:PE
+##       [2] 109051575  -6.19603369122881              Shisa5:+:PE
+##       [3]  34262025  -7.70114852451639              H2-Ab1:+:PE
+##       [4]  34306075  -5.80798257689994              H2-Eb1:+:PE
+##       [5]  60804525  -5.98346376178937                Cd74:+:PE
+##       ...       ...                ...                      ...
+##   [41612]  23752525  -0.77704982053454 Gm15972:-:PE,Mapre2:+:PE
+##   [41613]  83922125  0.880874875114293                 Numb:-:P
+##   [41614]  99395425 -0.411300240851034               Tmbim6:+:I
+##   [41615]  67504275  0.491618329274888              Rarres1:-:I
+##   [41616]  43043575   0.17425353617959              Fam214b:-:I
 ##                     left                                         right
 ##                 <factor>                                      <factor>
-##       [1]    H2-Aa:-:278                                              
-##       [2]                Atrip-trex1:-:4782,Trex1:-:4782,Shisa5:+:1716
-##       [3]                                                H2-Ab1:+:1486
-##       [4]                                                 H2-Eb1:+:925
+##       [1]    H2-Aa:-:565                                              
+##       [2]                Atrip-trex1:-:4783,Trex1:-:4788,Shisa5:+:1713
+##       [3]                                                H2-Ab1:+:1252
+##       [4]                                                 H2-Eb1:+:941
 ##       [5]                                                  Cd74:+:2158
 ##       ...            ...                                           ...
 ##   [41612]   Gm15972:-:78                                  Mapre2:+:525
 ##   [41613]     Numb:-:117                                              
 ##   [41614]  Tmbim6:+:1371                                 Tmbim6:+:4007
 ##   [41615]                                                             
-##   [41616] Fam214b:-:3100                                Fam214b:-:2107
+##   [41616] Fam214b:-:3106                                Fam214b:-:1948
 ##   -------
 ##   seqinfo: 21 sequences from an unspecified genome
 ```
@@ -983,19 +1010,16 @@ cur.region
 ##                     PValue                  FDR   direction  best.pos
 ##                  <numeric>            <numeric> <character> <integer>
 ##   [1] 4.04797773668499e-11 1.22569557219491e-06        down  34287575
-##              best.logFC                          overlap        left
-##               <numeric>                         <factor>    <factor>
-##   [1] -7.18686332236642 H2-Aa:-:PE,H2-Eb1:+:I,Notch4:+:I H2-Aa:-:278
-##          right
-##       <factor>
-##   [1]         
+##              best.logFC    overlap        left    right
+##               <numeric>   <factor>    <factor> <factor>
+##   [1] -7.18686332236642 H2-Aa:-:PE H2-Aa:-:565         
 ##   -------
 ##   seqinfo: 21 sequences from an unspecified genome
 ```
 
 
 
-One track is plotted for each library, in addition to the coordinate and annotation tracks.
+One track is plotted for each sample, in addition to the coordinate and annotation tracks.
 Coverage is plotted in terms of sequencing depth-per-million at each base.
 This corrects for differences in library sizes between tracks.
 
@@ -1015,8 +1039,8 @@ plotTracks(c(gax, collected, greg), chromosome=as.character(seqnames(cur.region)
 ```
 
 <div class="figure">
-<img src="h3k9ac_files/figure-html/simplebroadplot-1.png" alt="Coverage tracks for a simple DB event between pro-B and mature B cells, across a broad region in the H3K9ac data set. Read coverage for each library is shown as a per-million value at each base." width="768" />
-<p class="caption">(\#fig:simplebroadplot)Coverage tracks for a simple DB event between pro-B and mature B cells, across a broad region in the H3K9ac data set. Read coverage for each library is shown as a per-million value at each base.</p>
+<img src="h3k9ac_files/figure-html/simplebroadplot-1.png" alt="Coverage tracks for a simple DB event between pro-B and mature B cells, across a broad region in the H3K9ac data set. Read coverage for each sample is shown as a per-million value at each base." width="768" />
+<p class="caption">(\#fig:simplebroadplot)Coverage tracks for a simple DB event between pro-B and mature B cells, across a broad region in the H3K9ac data set. Read coverage for each sample is shown as a per-million value at each base.</p>
 </div>
 
 ## Complex DB across a broad region
@@ -1042,7 +1066,7 @@ cur.region
 ##   [1] 1.30976135102916e-08 1.33826057750574e-05        down 122990925
 ##              best.logFC                       overlap         left
 ##               <numeric>                      <factor>     <factor>
-##   [1] -5.48534588563145 A930024E05Rik:+:PE,Kdm2b:-:PE Kdm2b:-:2661
+##   [1] -5.48534588563145 A930024E05Rik:+:PE,Kdm2b:-:PE Kdm2b:-:2230
 ##                      right
 ##                   <factor>
 ##   [1] A930024E05Rik:+:2913
@@ -1080,7 +1104,7 @@ plotTracks(c(gax, collected, greg), chromosome=as.character(seqnames(cur.region)
 Both of the examples above involve differential marking within broad regions spanning several kilobases.
 This is consistent with changes in the marking profile across a large number of nucleosomes.
 However, H3K9ac marking can also be concentrated into small regions, involving only a few nucleosomes.
-*[csaw](https://bioconductor.org/packages/3.9/csaw)* is equally capable of detecting sharp DB within these small regions.
+*[csaw](https://bioconductor.org/packages/3.10/csaw)* is equally capable of detecting sharp DB within these small regions.
 This is demonstrated by examining those clusters that contain a smaller number of windows.
 
 
@@ -1098,9 +1122,9 @@ cur.region
 ##                     PValue                  FDR   direction  best.pos
 ##                  <numeric>            <numeric> <character> <integer>
 ##   [1] 1.29839663897595e-08 1.33826057750574e-05        down  36665925
-##              best.logFC   overlap     left    right
-##               <numeric>  <factor> <factor> <factor>
-##   [1] -4.93341819257933 Cd86:-:PE                  
+##              best.logFC   overlap        left    right
+##               <numeric>  <factor>    <factor> <factor>
+##   [1] -4.93341819257933 Cd86:-:PE Cd86:-:3937         
 ##   -------
 ##   seqinfo: 21 sequences from an unspecified genome
 ```
@@ -1144,112 +1168,111 @@ sessionInfo()
 ```
 
 ```
-## R Under development (unstable) (2019-01-14 r75992)
+## R version 3.6.0 Patched (2019-05-02 r76458)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
-## Running under: Ubuntu 16.04.5 LTS
+## Running under: Ubuntu 18.04.2 LTS
 ## 
 ## Matrix products: default
-## BLAS: /home/cri.camres.org/lun01/Software/R/trunk/lib/libRblas.so
-## LAPACK: /home/cri.camres.org/lun01/Software/R/trunk/lib/libRlapack.so
+## BLAS:   /home/luna/Software/R/R-3-6-branch-dev/lib/libRblas.so
+## LAPACK: /home/luna/Software/R/R-3-6-branch-dev/lib/libRlapack.so
 ## 
 ## locale:
-##  [1] LC_CTYPE=en_GB.UTF-8       LC_NUMERIC=C              
-##  [3] LC_TIME=en_GB.UTF-8        LC_COLLATE=en_GB.UTF-8    
-##  [5] LC_MONETARY=en_GB.UTF-8    LC_MESSAGES=en_GB.UTF-8   
-##  [7] LC_PAPER=en_GB.UTF-8       LC_NAME=C                 
+##  [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+##  [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+##  [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+##  [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
 ##  [9] LC_ADDRESS=C               LC_TELEPHONE=C            
-## [11] LC_MEASUREMENT=en_GB.UTF-8 LC_IDENTIFICATION=C       
+## [11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
 ## 
 ## attached base packages:
 ##  [1] grid      stats4    parallel  stats     graphics  grDevices utils    
 ##  [8] datasets  methods   base     
 ## 
 ## other attached packages:
-##  [1] Gviz_1.27.5                             
-##  [2] ChIPpeakAnno_3.17.2                     
+##  [1] Gviz_1.29.0                             
+##  [2] ChIPpeakAnno_3.19.2                     
 ##  [3] VennDiagram_1.6.20                      
 ##  [4] futile.logger_1.4.3                     
-##  [5] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.4
-##  [6] GenomicFeatures_1.35.6                  
-##  [7] org.Mm.eg.db_3.7.0                      
-##  [8] AnnotationDbi_1.45.0                    
-##  [9] edgeR_3.25.3                            
-## [10] limma_3.39.5                            
-## [11] csaw_1.17.4                             
-## [12] SummarizedExperiment_1.13.0             
-## [13] DelayedArray_0.9.8                      
-## [14] BiocParallel_1.17.9                     
+##  [5] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.7
+##  [6] GenomicFeatures_1.37.1                  
+##  [7] org.Mm.eg.db_3.8.2                      
+##  [8] AnnotationDbi_1.47.0                    
+##  [9] edgeR_3.27.3                            
+## [10] limma_3.41.2                            
+## [11] csaw_1.19.1                             
+## [12] SummarizedExperiment_1.15.1             
+## [13] DelayedArray_0.11.0                     
+## [14] BiocParallel_1.19.0                     
 ## [15] matrixStats_0.54.0                      
-## [16] Biobase_2.43.1                          
-## [17] rtracklayer_1.43.1                      
-## [18] bindrcpp_0.2.2                          
-## [19] BiocFileCache_1.7.0                     
-## [20] dbplyr_1.3.0                            
-## [21] Rsamtools_1.35.2                        
-## [22] Biostrings_2.51.2                       
-## [23] XVector_0.23.0                          
-## [24] GenomicRanges_1.35.1                    
-## [25] GenomeInfoDb_1.19.1                     
-## [26] IRanges_2.17.4                          
-## [27] S4Vectors_0.21.10                       
-## [28] BiocGenerics_0.29.1                     
-## [29] chipseqDBData_0.99.3                    
-## [30] knitr_1.21                              
-## [31] BiocStyle_2.11.0                        
+## [16] Biobase_2.45.0                          
+## [17] rtracklayer_1.45.1                      
+## [18] BiocFileCache_1.9.0                     
+## [19] dbplyr_1.4.0                            
+## [20] Rsamtools_2.1.2                         
+## [21] Biostrings_2.53.0                       
+## [22] XVector_0.25.0                          
+## [23] GenomicRanges_1.37.7                    
+## [24] GenomeInfoDb_1.21.1                     
+## [25] IRanges_2.19.5                          
+## [26] S4Vectors_0.23.3                        
+## [27] BiocGenerics_0.31.2                     
+## [28] chipseqDBData_1.1.0                     
+## [29] knitr_1.23                              
+## [30] BiocStyle_2.13.0                        
 ## 
 ## loaded via a namespace (and not attached):
-##   [1] colorspace_1.4-0              seqinr_3.4-5                 
-##   [3] htmlTable_1.13.1              biovizBase_1.31.1            
+##   [1] colorspace_1.4-1              seqinr_3.4-5                 
+##   [3] htmlTable_1.13.1              biovizBase_1.33.0            
 ##   [5] base64enc_0.1-3               dichromat_2.0-0              
-##   [7] rstudioapi_0.9.0              bit64_0.9-7                  
-##   [9] interactiveDisplayBase_1.21.0 splines_3.6.0                
-##  [11] ade4_1.7-13                   Formula_1.2-3                
-##  [13] cluster_2.0.7-1               GO.db_3.7.0                  
-##  [15] graph_1.61.0                  shiny_1.2.0                  
-##  [17] BiocManager_1.30.4            compiler_3.6.0               
-##  [19] httr_1.4.0                    backports_1.1.3              
-##  [21] assertthat_0.2.0              Matrix_1.2-15                
-##  [23] lazyeval_0.2.1                later_0.7.5                  
-##  [25] formatR_1.5                   acepack_1.4.1                
-##  [27] htmltools_0.3.6               prettyunits_1.0.2            
-##  [29] tools_3.6.0                   gtable_0.2.0                 
-##  [31] glue_1.3.0                    GenomeInfoDbData_1.2.0       
-##  [33] dplyr_0.7.8                   rappdirs_0.3.1               
-##  [35] Rcpp_1.0.0                    multtest_2.39.0              
-##  [37] ExperimentHub_1.9.1           xfun_0.4                     
-##  [39] stringr_1.3.1                 mime_0.6                     
-##  [41] ensembldb_2.7.8               statmod_1.4.30               
-##  [43] XML_3.98-1.16                 idr_1.2                      
-##  [45] AnnotationHub_2.15.5          zlibbioc_1.29.0              
-##  [47] MASS_7.3-51.1                 scales_1.0.0                 
-##  [49] BSgenome_1.51.0               VariantAnnotation_1.29.17    
-##  [51] hms_0.4.2                     promises_1.0.1               
-##  [53] ProtGenerics_1.15.0           RBGL_1.59.1                  
-##  [55] AnnotationFilter_1.7.0        lambda.r_1.2.3               
-##  [57] RColorBrewer_1.1-2            yaml_2.2.0                   
-##  [59] curl_3.3                      gridExtra_2.3                
-##  [61] memoise_1.1.0                 ggplot2_3.1.0                
-##  [63] rpart_4.1-13                  biomaRt_2.39.2               
-##  [65] latticeExtra_0.6-28           stringi_1.2.4                
-##  [67] RSQLite_2.1.1                 highr_0.7                    
-##  [69] checkmate_1.9.1               rlang_0.3.1                  
-##  [71] pkgconfig_2.0.2               bitops_1.0-6                 
-##  [73] evaluate_0.12                 lattice_0.20-38              
-##  [75] purrr_0.3.0                   bindr_0.1.1                  
-##  [77] htmlwidgets_1.3               GenomicAlignments_1.19.1     
+##   [7] rstudioapi_0.10               bit64_0.9-7                  
+##   [9] interactiveDisplayBase_1.23.0 codetools_0.2-16             
+##  [11] splines_3.6.0                 ade4_1.7-13                  
+##  [13] Formula_1.2-3                 cluster_2.0.9                
+##  [15] GO.db_3.8.2                   graph_1.63.0                 
+##  [17] shiny_1.3.2                   BiocManager_1.30.4           
+##  [19] compiler_3.6.0                httr_1.4.0                   
+##  [21] backports_1.1.4               assertthat_0.2.1             
+##  [23] Matrix_1.2-17                 lazyeval_0.2.2               
+##  [25] later_0.8.0                   formatR_1.6                  
+##  [27] acepack_1.4.1                 htmltools_0.3.6              
+##  [29] prettyunits_1.0.2             tools_3.6.0                  
+##  [31] gtable_0.3.0                  glue_1.3.1                   
+##  [33] GenomeInfoDbData_1.2.1        dplyr_0.8.1                  
+##  [35] rappdirs_0.3.1                Rcpp_1.0.1                   
+##  [37] multtest_2.41.0               ExperimentHub_1.11.1         
+##  [39] xfun_0.7                      stringr_1.4.0                
+##  [41] mime_0.6                      ensembldb_2.9.1              
+##  [43] statmod_1.4.30                XML_3.98-1.19                
+##  [45] idr_1.2                       AnnotationHub_2.17.3         
+##  [47] zlibbioc_1.31.0               MASS_7.3-51.4                
+##  [49] scales_1.0.0                  BSgenome_1.53.0              
+##  [51] VariantAnnotation_1.31.3      hms_0.4.2                    
+##  [53] promises_1.0.1                ProtGenerics_1.17.2          
+##  [55] RBGL_1.61.0                   AnnotationFilter_1.9.0       
+##  [57] lambda.r_1.2.3                RColorBrewer_1.1-2           
+##  [59] yaml_2.2.0                    curl_3.3                     
+##  [61] gridExtra_2.3                 memoise_1.1.0                
+##  [63] ggplot2_3.1.1                 rpart_4.1-15                 
+##  [65] biomaRt_2.41.0                latticeExtra_0.6-28          
+##  [67] stringi_1.4.3                 RSQLite_2.1.1                
+##  [69] highr_0.8                     checkmate_1.9.3              
+##  [71] rlang_0.3.4                   pkgconfig_2.0.2              
+##  [73] bitops_1.0-6                  evaluate_0.13                
+##  [75] lattice_0.20-38               purrr_0.3.2                  
+##  [77] htmlwidgets_1.3               GenomicAlignments_1.21.2     
 ##  [79] bit_1.1-14                    tidyselect_0.2.5             
 ##  [81] plyr_1.8.4                    magrittr_1.5                 
-##  [83] bookdown_0.9                  R6_2.3.0                     
+##  [83] bookdown_0.10                 R6_2.4.0                     
 ##  [85] Hmisc_4.2-0                   DBI_1.0.0                    
-##  [87] foreign_0.8-71                pillar_1.3.1                 
-##  [89] nnet_7.3-12                   survival_2.43-3              
-##  [91] RCurl_1.95-4.11               tibble_2.0.1                 
+##  [87] foreign_0.8-71                pillar_1.4.0                 
+##  [89] nnet_7.3-12                   survival_2.44-1.1            
+##  [91] RCurl_1.95-4.12               tibble_2.1.1                 
 ##  [93] crayon_1.3.4                  futile.options_1.0.1         
-##  [95] KernSmooth_2.23-15            rmarkdown_1.11               
-##  [97] progress_1.2.0                locfit_1.5-9.1               
-##  [99] data.table_1.12.0             blob_1.1.1                   
-## [101] digest_0.6.18                 xtable_1.8-3                 
-## [103] httpuv_1.4.5.1                regioneR_1.15.1              
+##  [95] KernSmooth_2.23-15            rmarkdown_1.13               
+##  [97] progress_1.2.2                locfit_1.5-9.1               
+##  [99] data.table_1.12.2             blob_1.1.1                   
+## [101] digest_0.6.19                 xtable_1.8-4                 
+## [103] httpuv_1.5.1                  regioneR_1.17.2              
 ## [105] munsell_0.5.0
 ```
 
