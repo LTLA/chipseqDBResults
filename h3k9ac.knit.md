@@ -9,7 +9,7 @@ author:
   affiliation: 
   - *WEHI
   - Department of Mathematics and Statistics, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
-date: "2019-05-27"
+date: "2019-06-02"
 vignette: >
   %\VignetteIndexEntry{2. Differential enrichment of H3K9ac in B cells}
   %\VignetteEngine{knitr::rmarkdown}
@@ -45,12 +45,12 @@ acdata
 ## 2    h3k9ac-proB-8108    pro-B H3K9ac (8108)
 ## 3 h3k9ac-matureB-8059 mature B H3K9ac (8059)
 ## 4 h3k9ac-matureB-8086 mature B H3K9ac (8086)
-##                                                      Path
-##                                               <character>
-## 1    /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-proB-8113.bam
-## 2    /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-proB-8108.bam
-## 3 /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-matureB-8059.bam
-## 4 /tmp/RtmpnLp3hN/file36c3d36d627/h3k9ac-matureB-8086.bam
+##                                                       Path
+##                                                <character>
+## 1    /tmp/RtmpzXncKQ/file59c83bf03d1f/h3k9ac-proB-8113.bam
+## 2    /tmp/RtmpzXncKQ/file59c83bf03d1f/h3k9ac-proB-8108.bam
+## 3 /tmp/RtmpzXncKQ/file59c83bf03d1f/h3k9ac-matureB-8059.bam
+## 4 /tmp/RtmpzXncKQ/file59c83bf03d1f/h3k9ac-matureB-8086.bam
 ```
 
 # Pre-processing checks 
@@ -571,8 +571,9 @@ Chaining effects are mitigated by setting a maximum cluster width of 5 kbp.
 
 
 ```r
-merged <- mergeWindows(rowRanges(filtered.data), tol=100, max.width=5000)
-merged$region
+merged <- mergeResults(filtered.data, res$table, tol=100, 
+    merge.args=list(max.width=5000))
+merged$regions
 ```
 
 ```
@@ -602,39 +603,50 @@ Applying the BH method to the combined $p$-values allows the region-level FDR to
 
 
 ```r
-tabcom <- combineTests(merged$id, res$table)
-head(tabcom)
+tabcom <- merged$combined
+tabcom
 ```
 
 ```
-## DataFrame with 6 rows and 6 columns
-##    nWindows  logFC.up logFC.down              PValue                FDR
-##   <integer> <integer>  <integer>           <numeric>          <numeric>
-## 1         3         3          0   0.146852572988762   0.24642809183469
-## 2        24         9          0  0.0882966655233521  0.168735548166406
-## 3         8         1          3   0.526424531180179  0.648041273430584
-## 4        10         1          2   0.729650939287535  0.829875744449031
-## 5        36        14          6  0.0208882037608781 0.0605414172269767
-## 6         3         0          3 0.00884432996167321  0.034553893018911
-##     direction
-##   <character>
-## 1          up
-## 2          up
-## 3       mixed
-## 4       mixed
-## 5          up
-## 6        down
+## DataFrame with 41616 rows and 6 columns
+##        nWindows  logFC.up logFC.down              PValue                FDR
+##       <integer> <integer>  <integer>           <numeric>          <numeric>
+## 1             3         3          0   0.146852572988762   0.24642809183469
+## 2            24         9          0  0.0882966655233521  0.168735548166406
+## 3             8         1          3   0.526424531180179  0.648041273430584
+## 4            10         1          2   0.729650939287535  0.829875744449031
+## 5            36        14          6  0.0208882037608781 0.0605414172269767
+## ...         ...       ...        ...                 ...                ...
+## 41612         6         0          6  0.0058750474593641 0.0265929927201323
+## 41613         6         0          6  0.0386801713741882 0.0930954838880468
+## 41614         6         0          6  0.0208215544419839 0.0604134288264382
+## 41615         2         0          2  0.0334464643173884 0.0836784933889885
+## 41616         4         0          4 0.00147494061744926 0.0114325067490721
+##         direction
+##       <character>
+## 1              up
+## 2              up
+## 3           mixed
+## 4           mixed
+## 5              up
+## ...           ...
+## 41612        down
+## 41613        down
+## 41614        down
+## 41615        down
+## 41616        down
 ```
 
-Each row of the output table contains the statistics for a single cluster, 
+Each row of the above table contains the statistics for a single cluster, 
 including the combined *p*-value before and after the BH correction.
 Additional fields include `nWindows`, the total number of windows in the cluster; 
 `logFC.up`, the number of windows with a DB log-fold change above 0.5; 
-and `log.FC.down`, the number fof windows with a log-fold change below -0.5.
+and `log.FC.down`, the number of windows with a log-fold change below -0.5.
 
 ## Examining the scope and direction of DB
 
-We can easily calculate the total number of DB regions at a FDR of 5%.
+We determine the total number of DB regions at a FDR of 5% 
+by applying the Benjamini-Hochberg method on the combined $p$-values.
 
 
 ```r
@@ -648,7 +660,8 @@ summary(is.sig)
 ```
 
 Determining the direction of DB is more complicated, as clusters may contain windows that are changing in opposite directions.
-One approach is to use the direction of DB from the windows that contribute most to the combined $p$-value, as reported in the `direction` field for each cluster.
+One approach is to use the direction of DB from the windows that contribute most to the combined $p$-value, 
+as reported in the `direction` field for each cluster.
 If significance is driven by windows changing in both directions, the direction for the cluster is defined as `"mixed"`.
 Otherwise, the reported direction is the same as that of the windows, i.e., `"up"` or `"down"`.
 
@@ -663,39 +676,47 @@ table(tabcom$direction[is.sig])
 ##  8580   154  4367
 ```
 
-Another approach is to use the log-fold change of the most significant window (identified with the `getBestTest()` function) as a proxy for the log-fold change of the cluster.
+Another approach is to use the log-fold change of the most significant window as a proxy for the log-fold change of the cluster.
 
 
 ```r
-tabbest <- getBestTest(merged$id, res$table)
-head(tabbest)
+tabbest <- merged$best
+tabbest
 ```
 
 ```
-## DataFrame with 6 rows and 6 columns
-##        best              logFC            logCPM                F
-##   <integer>          <numeric>         <numeric>        <numeric>
-## 1         3   2.00153829256075 0.250287926080891  3.9403070089186
-## 2        15   6.45488225628961 0.712521465636628 11.9826122454754
-## 3        35    1.1783996686851 0.727376262089356 2.51421074291099
-## 4        43 -0.908825402006814   1.0234078969562 2.74637354889958
-## 5        60   6.57273805081489 0.809667875887879 14.9826446406268
-## 6        82  -5.64002491507422 0.584285981417552 14.0521867903502
-##               PValue                FDR
-##            <numeric>          <numeric>
-## 1  0.189147676521167  0.335560137526852
-## 2 0.0882966655233521  0.190582668484939
-## 3                  1                  1
-## 4                  1                  1
-## 5 0.0464345919412199  0.121535973473321
-## 6 0.0176886599233464 0.0636112904186881
+## DataFrame with 41616 rows and 6 columns
+##            best              logFC            logCPM                F
+##       <integer>          <numeric>         <numeric>        <numeric>
+## 1             3   2.00153829256075 0.250287926080891  3.9403070089186
+## 2            15   6.45488225628961 0.712521465636628 11.9826122454754
+## 3            35    1.1783996686851 0.727376262089356 2.51421074291099
+## 4            43 -0.908825402006814   1.0234078969562 2.74637354889958
+## 5            60   6.57273805081489 0.809667875887879 14.9826446406268
+## ...         ...                ...               ...              ...
+## 41612    689064  -6.96911276199788  1.40799011361021 22.8173045433537
+## 41613    689070  -5.44350288147529 0.481214860211134 7.93926118453806
+## 41614    689076    -6.683218886502  1.21098784780083 15.4258356080577
+## 41615    689082  -5.00403851736606 0.313859418771516 7.30295013039867
+## 41616    689086  -4.08130627831824 0.513547709822732 17.0075267948004
+##                    PValue                FDR
+##                 <numeric>          <numeric>
+## 1       0.189147676521167  0.335560137526852
+## 2      0.0882966655233521  0.190582668484939
+## 3                       1                  1
+## 4                       1                  1
+## 5      0.0464345919412199  0.121535973473321
+## ...                   ...                ...
+## 41612  0.0176251423780923 0.0634640306584145
+## 41613   0.195680102159668  0.344562772021383
+## 41614  0.0614117484768238   0.14635845404945
+## 41615  0.0668929286347768  0.154992267583368
+## 41616 0.00421596727709738 0.0261244333239554
 ```
 
-In the above table, each row contains the statistics for each cluster.
-Of interest are the `best` and `logFC` fields.
-The former is the index of the window that is the most significant in each cluster, 
-while the latter is the log-fold change of that window.
-This is used to obtain a summary of the direction of DB across all clusters.
+In the table above, the `best` column is the index of the window that is the most significant in each cluster, 
+while the `logFC` field is the log-fold change of that window.
+We use this to obtain a summary of the direction of DB across all clusters.
 
 
 ```r
@@ -721,8 +742,8 @@ The updated `GRanges` object is then saved to file as a serialized R object with
 
 
 ```r
-out.ranges <- merged$region
-mcols(out.ranges) <- data.frame(tabcom,
+out.ranges <- merged$regions
+mcols(out.ranges) <- DataFrame(tabcom,
     best.pos=mid(ranges(rowRanges(filtered.data[tabbest$best]))),
     best.logFC=tabbest$logFC)
 saveRDS(file="h3k9ac_results.rds", out.ranges)
@@ -865,33 +886,66 @@ head(prom)
 ```
 
 All windows overlapping each promoter are defined as a cluster.
-DB statistics are computed for each cluster/promoter with the `combineOverlaps()` function, which behaves like the `combineTests()` function for `Hits` input objects.
-This directly yields DB results for the annotated features.
+We compute DB statistics are computed for each cluster/promoter using Simes' method, 
+which directly yields DB results for the annotated features.
 Promoters with no overlapping windows are assigned `NA` values for the various fields and are filtered out below for demonstration purposes.
 
 
 ```r
-olap <- findOverlaps(prom, rowRanges(filtered.data))
-tabprom <- combineOverlaps(olap, res$table)
-with.anno <- data.frame(ID=prom$tx_name, Gene=prom$gene_name, tabprom)
-head(with.anno[!is.na(with.anno$PValue),])
+olap.out <- overlapResults(filtered.data, regions=prom, res$table)
+olap.out
 ```
 
 ```
-##                       ID   Gene nWindows logFC.up logFC.down    PValue
-## 14  ENSMUST00000134384.7 Lypla1       18        2          5 0.7004649
-## 15 ENSMUST00000027036.10 Lypla1       18        2          5 0.7004649
-## 16  ENSMUST00000150971.7 Lypla1       18        2          5 0.7004649
-## 17  ENSMUST00000155020.1 Lypla1       18        2          5 0.7004649
-## 18  ENSMUST00000119612.8 Lypla1       18        2          5 0.7004649
-## 19  ENSMUST00000137887.7 Lypla1       18        2          5 0.7004649
-##          FDR direction
-## 14 0.7393987     mixed
-## 15 0.7393987     mixed
-## 16 0.7393987     mixed
-## 17 0.7393987     mixed
-## 18 0.7393987     mixed
-## 19 0.7393987     mixed
+## DataFrame with 138930 rows and 3 columns
+##                             regions     combined         best
+##                           <GRanges>  <DataFrame>  <DataFrame>
+## 1            chr1:3070253-3074252:+ NA:NA:NA:... NA:NA:NA:...
+## 2            chr1:3099016-3103015:+ NA:NA:NA:... NA:NA:NA:...
+## 3            chr1:3249757-3253756:+ NA:NA:NA:... NA:NA:NA:...
+## 4            chr1:3463587-3467586:+ NA:NA:NA:... NA:NA:NA:...
+## 5            chr1:3528795-3532794:+ NA:NA:NA:... NA:NA:NA:...
+## ...                             ...          ...          ...
+## 138926 chrUn_GL456381:15722-19721:- NA:NA:NA:... NA:NA:NA:...
+## 138927 chrUn_GL456385:28243-32242:+ NA:NA:NA:... NA:NA:NA:...
+## 138928 chrUn_GL456385:29719-33718:+ NA:NA:NA:... NA:NA:NA:...
+## 138929 chrUn_JH584304:58668-62667:- NA:NA:NA:... NA:NA:NA:...
+## 138930 chrUn_JH584304:58691-62690:- NA:NA:NA:... NA:NA:NA:...
+```
+
+```r
+simple <- DataFrame(ID=prom$tx_name, Gene=prom$gene_name, olap.out$combined)
+simple[!is.na(simple$PValue),]
+```
+
+```
+## DataFrame with 55910 rows and 8 columns
+##                          ID        Gene  nWindows  logFC.up logFC.down
+##                 <character> <character> <integer> <integer>  <integer>
+## 1      ENSMUST00000134384.7      Lypla1        18         2          5
+## 2     ENSMUST00000027036.10      Lypla1        18         2          5
+## 3      ENSMUST00000150971.7      Lypla1        18         2          5
+## 4      ENSMUST00000155020.1      Lypla1        18         2          5
+## 5      ENSMUST00000119612.8      Lypla1        18         2          5
+## ...                     ...         ...       ...       ...        ...
+## 55906  ENSMUST00000150715.1         Uty        18         0         14
+## 55907  ENSMUST00000154527.1         Uty        18         0         14
+## 55908 ENSMUST00000091190.11       Ddx3y        17         0         17
+## 55909  ENSMUST00000188484.1       Ddx3y        17         0         17
+## 55910  ENSMUST00000187962.1          NA         3         0          3
+##                     PValue                  FDR   direction
+##                  <numeric>            <numeric> <character>
+## 1        0.700464901716033    0.739398720970876       mixed
+## 2        0.700464901716033    0.739398720970876       mixed
+## 3        0.700464901716033    0.739398720970876       mixed
+## 4        0.700464901716033    0.739398720970876       mixed
+## 5        0.700464901716033    0.739398720970876       mixed
+## ...                    ...                  ...         ...
+## 55906 6.45129747826827e-06 0.000323490620636752        down
+## 55907 6.45129747826827e-06 0.000323490620636752        down
+## 55908 6.82321075683763e-05  0.00142901564627459        down
+## 55909 6.82321075683763e-05  0.00142901564627459        down
+## 55910  0.00293752372968205   0.0137933108025971        down
 ```
 
 Note that this strategy is distinct from counting reads across promoters.
@@ -1197,9 +1251,9 @@ sessionInfo()
 ##  [6] GenomicFeatures_1.37.1                  
 ##  [7] org.Mm.eg.db_3.8.2                      
 ##  [8] AnnotationDbi_1.47.0                    
-##  [9] edgeR_3.27.3                            
+##  [9] edgeR_3.27.4                            
 ## [10] limma_3.41.2                            
-## [11] csaw_1.19.1                             
+## [11] csaw_1.19.2                             
 ## [12] SummarizedExperiment_1.15.1             
 ## [13] DelayedArray_0.11.0                     
 ## [14] BiocParallel_1.19.0                     
@@ -1211,10 +1265,10 @@ sessionInfo()
 ## [20] Rsamtools_2.1.2                         
 ## [21] Biostrings_2.53.0                       
 ## [22] XVector_0.25.0                          
-## [23] GenomicRanges_1.37.7                    
+## [23] GenomicRanges_1.37.8                    
 ## [24] GenomeInfoDb_1.21.1                     
-## [25] IRanges_2.19.5                          
-## [26] S4Vectors_0.23.3                        
+## [25] IRanges_2.19.6                          
+## [26] S4Vectors_0.23.4                        
 ## [27] BiocGenerics_0.31.2                     
 ## [28] chipseqDBData_1.1.0                     
 ## [29] knitr_1.23                              
@@ -1242,7 +1296,7 @@ sessionInfo()
 ##  [37] multtest_2.41.0               ExperimentHub_1.11.1         
 ##  [39] xfun_0.7                      stringr_1.4.0                
 ##  [41] mime_0.6                      ensembldb_2.9.1              
-##  [43] statmod_1.4.30                XML_3.98-1.19                
+##  [43] statmod_1.4.32                XML_3.98-1.19                
 ##  [45] idr_1.2                       AnnotationHub_2.17.3         
 ##  [47] zlibbioc_1.31.0               MASS_7.3-51.4                
 ##  [49] scales_1.0.0                  BSgenome_1.53.0              
@@ -1257,16 +1311,16 @@ sessionInfo()
 ##  [67] stringi_1.4.3                 RSQLite_2.1.1                
 ##  [69] highr_0.8                     checkmate_1.9.3              
 ##  [71] rlang_0.3.4                   pkgconfig_2.0.2              
-##  [73] bitops_1.0-6                  evaluate_0.13                
+##  [73] bitops_1.0-6                  evaluate_0.14                
 ##  [75] lattice_0.20-38               purrr_0.3.2                  
 ##  [77] htmlwidgets_1.3               GenomicAlignments_1.21.2     
 ##  [79] bit_1.1-14                    tidyselect_0.2.5             
 ##  [81] plyr_1.8.4                    magrittr_1.5                 
-##  [83] bookdown_0.10                 R6_2.4.0                     
+##  [83] bookdown_0.11                 R6_2.4.0                     
 ##  [85] Hmisc_4.2-0                   DBI_1.0.0                    
-##  [87] foreign_0.8-71                pillar_1.4.0                 
+##  [87] foreign_0.8-71                pillar_1.4.1                 
 ##  [89] nnet_7.3-12                   survival_2.44-1.1            
-##  [91] RCurl_1.95-4.12               tibble_2.1.1                 
+##  [91] RCurl_1.95-4.12               tibble_2.1.2                 
 ##  [93] crayon_1.3.4                  futile.options_1.0.1         
 ##  [95] KernSmooth_2.23-15            rmarkdown_1.13               
 ##  [97] progress_1.2.2                locfit_1.5-9.1               

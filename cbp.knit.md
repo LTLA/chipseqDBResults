@@ -9,7 +9,7 @@ author:
   affiliation: 
   - *WEHI
   - Department of Mathematics and Statistics, The University of Melbourne, Parkville, VIC 3010, Melbourne, Australia
-date: "2019-05-27"
+date: "2019-06-02"
 vignette: >
   %\VignetteIndexEntry{3. Differential binding of CBP in fibroblasts}
   %\VignetteEngine{knitr::rmarkdown}
@@ -35,9 +35,6 @@ BAM files and indices are downloaded using *[chipseqDBData](https://bioconductor
 ```r
 library(chipseqDBData)
 cbpdata <- CBPData()
-```
-
-```r
 cbpdata
 ```
 
@@ -49,12 +46,12 @@ cbpdata
 ## 2  SRR1145788 CBP wild-type (2)
 ## 3  SRR1145789 CBP knock-out (1)
 ## 4  SRR1145790 CBP knock-out (2)
-##                                             Path
-##                                      <character>
-## 1 /tmp/Rtmpcjbzy4/file8882c32cc39/SRR1145787.bam
-## 2 /tmp/Rtmpcjbzy4/file8882c32cc39/SRR1145788.bam
-## 3 /tmp/Rtmpcjbzy4/file8882c32cc39/SRR1145789.bam
-## 4 /tmp/Rtmpcjbzy4/file8882c32cc39/SRR1145790.bam
+##                                              Path
+##                                       <character>
+## 1 /tmp/RtmpvkL5ND/file32cb39de2ead/SRR1145787.bam
+## 2 /tmp/RtmpvkL5ND/file32cb39de2ead/SRR1145788.bam
+## 3 /tmp/RtmpvkL5ND/file32cb39de2ead/SRR1145789.bam
+## 4 /tmp/RtmpvkL5ND/file32cb39de2ead/SRR1145790.bam
 ```
 
 # Pre-processing checks
@@ -389,12 +386,37 @@ contrast <- makeContrasts(wt-ko, levels=design)
 res <- glmQLFTest(fit, contrast=contrast)
 ```
 
-Windows are clustered into regions and the region-level FDR is controlled using Simes' method [@simes1986; @lun2014denovo].
+Windows less than 100 bp apart are clustered into regions [@lun2014denovo] with a maximum cluster width of 5 kbp.
+We then control the region-level FDR by combining per-window $p$-values using Simes' method [@simes1986].
 
 
 ```r
-merged <- mergeWindows(rowRanges(filtered.data), tol=100, max.width=5000)
-tabcom <- combineTests(merged$id, res$table)
+merged <- mergeResults(filtered.data, res$table, tol=100, 
+    merge.args=list(max.width=5000))
+merged$regions
+```
+
+```
+## GRanges object with 61415 ranges and 0 metadata columns:
+##           seqnames            ranges strand
+##              <Rle>         <IRanges>  <Rle>
+##       [1]     chr1   3613551-3613610      *
+##       [2]     chr1   4785501-4785860      *
+##       [3]     chr1   4807601-4808010      *
+##       [4]     chr1   4857451-4857910      *
+##       [5]     chr1   4858301-4858460      *
+##       ...      ...               ...    ...
+##   [61411]     chrY 90808801-90808910      *
+##   [61412]     chrY 90810901-90810910      *
+##   [61413]     chrY 90811301-90811360      *
+##   [61414]     chrY 90811601-90811660      *
+##   [61415]     chrY 90811851-90813910      *
+##   -------
+##   seqinfo: 66 sequences from an unspecified genome
+```
+
+```r
+tabcom <- merged$combined
 is.sig <- tabcom$FDR <= 0.05
 summary(is.sig)
 ```
@@ -420,7 +442,7 @@ table(tabcom$direction[is.sig])
 
 ```r
 # Direction according the best window in each cluster.
-tabbest <- getBestTest(merged$id, res$table)
+tabbest <- merged$best
 is.sig.pos <- (tabbest$logFC > 0)[is.sig]
 summary(is.sig.pos)
 ```
@@ -430,12 +452,12 @@ summary(is.sig.pos)
 ## logical    1832
 ```
 
-These results are saved to file in the form of a serialized R object for later inspection.
+We save the results to file in the form of a serialized R object for later inspection.
 
 
 ```r
-out.ranges <- merged$region
-mcols(out.ranges) <- data.frame(tabcom,
+out.ranges <- merged$regions
+mcols(out.ranges) <- DataFrame(tabcom,
     best.pos=mid(ranges(rowRanges(filtered.data[tabbest$best]))),
     best.logFC=tabbest$logFC)
 saveRDS(file="cbp_results.rds", out.ranges)
@@ -564,9 +586,9 @@ sessionInfo()
 ##  [3] TxDb.Mmusculus.UCSC.mm10.knownGene_3.4.7
 ##  [4] GenomicFeatures_1.37.1                  
 ##  [5] AnnotationDbi_1.47.0                    
-##  [6] edgeR_3.27.3                            
+##  [6] edgeR_3.27.4                            
 ##  [7] limma_3.41.2                            
-##  [8] csaw_1.19.1                             
+##  [8] csaw_1.19.2                             
 ##  [9] SummarizedExperiment_1.15.1             
 ## [10] DelayedArray_0.11.0                     
 ## [11] BiocParallel_1.19.0                     
@@ -578,10 +600,10 @@ sessionInfo()
 ## [17] Rsamtools_2.1.2                         
 ## [18] Biostrings_2.53.0                       
 ## [19] XVector_0.25.0                          
-## [20] GenomicRanges_1.37.7                    
+## [20] GenomicRanges_1.37.8                    
 ## [21] GenomeInfoDb_1.21.1                     
-## [22] IRanges_2.19.5                          
-## [23] S4Vectors_0.23.3                        
+## [22] IRanges_2.19.6                          
+## [23] S4Vectors_0.23.4                        
 ## [24] BiocGenerics_0.31.2                     
 ## [25] chipseqDBData_1.1.0                     
 ## [26] knitr_1.23                              
@@ -606,7 +628,7 @@ sessionInfo()
 ## [31] Rcpp_1.0.1                    ExperimentHub_1.11.1         
 ## [33] xfun_0.7                      stringr_1.4.0                
 ## [35] mime_0.6                      ensembldb_2.9.1              
-## [37] statmod_1.4.30                XML_3.98-1.19                
+## [37] statmod_1.4.32                XML_3.98-1.19                
 ## [39] AnnotationHub_2.17.3          zlibbioc_1.31.0              
 ## [41] scales_1.0.0                  BSgenome_1.53.0              
 ## [43] VariantAnnotation_1.31.3      ProtGenerics_1.17.2          
@@ -619,16 +641,16 @@ sessionInfo()
 ## [57] stringi_1.4.3                 RSQLite_2.1.1                
 ## [59] highr_0.8                     checkmate_1.9.3              
 ## [61] rlang_0.3.4                   pkgconfig_2.0.2              
-## [63] bitops_1.0-6                  evaluate_0.13                
+## [63] bitops_1.0-6                  evaluate_0.14                
 ## [65] lattice_0.20-38               purrr_0.3.2                  
 ## [67] GenomicAlignments_1.21.2      htmlwidgets_1.3              
 ## [69] bit_1.1-14                    tidyselect_0.2.5             
 ## [71] plyr_1.8.4                    magrittr_1.5                 
-## [73] bookdown_0.10                 R6_2.4.0                     
+## [73] bookdown_0.11                 R6_2.4.0                     
 ## [75] Hmisc_4.2-0                   DBI_1.0.0                    
-## [77] pillar_1.4.0                  foreign_0.8-71               
+## [77] pillar_1.4.1                  foreign_0.8-71               
 ## [79] survival_2.44-1.1             RCurl_1.95-4.12              
-## [81] nnet_7.3-12                   tibble_2.1.1                 
+## [81] nnet_7.3-12                   tibble_2.1.2                 
 ## [83] crayon_1.3.4                  KernSmooth_2.23-15           
 ## [85] rmarkdown_1.13                progress_1.2.2               
 ## [87] locfit_1.5-9.1                data.table_1.12.2            
